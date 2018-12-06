@@ -250,10 +250,10 @@ phina.define('Square',{
   _createMusicalNote: function(blockSize) {
     switch(blockSize) {
       case 5:
-        return DisplayElement();//MusicalNote().getNoteFifth(this._nodeSize, this._nodeSize);
+        return MusicalNote().getNoteFifth(this._nodeSize, this._nodeSize);
         break;
       case 7:
-        return DisplayElement();//MusicalNote().getNoteSeventh(this._nodeSize, this._nodeSize);
+        return MusicalNote().getNoteSeventh(this._nodeSize, this._nodeSize);
         break;
     }
   },
@@ -324,7 +324,7 @@ phina.define('Square',{
   },
 
   highlight: function(nodeIndex) {
-    /*let HIGHLIGHT_COLOR = "#EEE"
+    let HIGHLIGHT_COLOR = "#EEE"
 
     this._nodeList[nodeIndex].nodeNum.fill = HIGHLIGHT_COLOR;
     if(nodeIndex != 0) {
@@ -345,7 +345,15 @@ phina.define('Square',{
           prevMusicNoteGroup.children[k].children[l].stroke = "#AAA";
         }
       }
-    }*/
+    }
+    else if(musicNodeIndex == 0) {
+      let prevMusicNoteGroup = this._musicNoteList[this._musicNoteList.length-1];
+      for(let k=0; k<prevMusicNoteGroup.children.length; k++){
+        for(let l=0; l<prevMusicNoteGroup.children[k].children.length; l++){
+          prevMusicNoteGroup.children[k].children[l].stroke = "#AAA";
+        }
+      }
+    }
   },
 
   switchBackgroundVisible: function() {
@@ -638,7 +646,8 @@ phina.define('Ball',{
     } else {
       this.fill = "#CC0000";
     }
-    //this._square.highlight(this.currentNode);
+
+    this._square.highlight(this.moveNodeCount % squareNodeLength);
 
     this._moveCore(nextX, nextY, dir, squareNodeLength);
   },
@@ -778,7 +787,7 @@ phina.define('Labels',{
 
   init: function(layoutId) {
     this.superInit();
-    let grayColor = "#DDD";
+    let grayColor = "#AAA";
 
     this.mainLabel = Label({
       fontSize: 45,
