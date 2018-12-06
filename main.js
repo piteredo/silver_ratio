@@ -10,6 +10,7 @@ phina.globalize();
 SCREEN_WIDTH = 960;
 SCREEN_HEIGHT = 920;
 BACKGROUND_COLOR = "#333";
+BPM = 390; //16note
 
 
 phina.define('MainScene',{
@@ -17,25 +18,30 @@ phina.define('MainScene',{
 
   NODE_SIZE: 14,
   LAYOUT_ID: 0,
-  MOVE_SPEED: 165, //165
+  MOVE_SPEED: 1000 * 60 / BPM,
 
   init: function(option) {
     this.superInit(option);
     this.backgroundColor = BACKGROUND_COLOR;
-    let marginTop = (SCREEN_WIDTH - (Layout().getLongSidelength(Layout().getListLength() - 1) * this.NODE_SIZE)) / 2;
     let marginLeft = (SCREEN_WIDTH - (Layout().getLongSidelength(Layout().getListLength() - 1) * this.NODE_SIZE)) / 2;
+    let marginTop = (SCREEN_WIDTH - (Layout().getLongSidelength(Layout().getListLength() - 1) * this.NODE_SIZE)) / 2;
+
+    let stage = DisplayElement()
+      .setOrigin(0, 0)
+      .setPosition(marginLeft, marginTop) //暫定位置
+      .addChildTo(this);
 
     this.labels = Labels(this.LAYOUT_ID)
       .setPosition(SCREEN_WIDTH/2, SCREEN_HEIGHT-60)
       .addChildTo(this);
     this.square = Square(this.NODE_SIZE, this.LAYOUT_ID)
-      .setPosition(marginTop, marginLeft) //暫定位置
-      .addChildTo(this);
-    this.ball = Ball(this.NODE_SIZE, this.LAYOUT_ID, this.square, this.labels)
-      .setPosition(marginTop, marginLeft) //暫定位置
+      .addChildTo(stage);
+    this.turnLengthLabel = TurnLengthLabel(this.NODE_SIZE, this.LAYOUT_ID)
+      .addChildTo(stage);
+    this.ball = Ball(this.NODE_SIZE, this.LAYOUT_ID, this.square, this.labels, this.turnLengthLabel)
       .setMoveSpeed(this.MOVE_SPEED)
-      .addChildTo(this)
-      .moveStart();
+      .addChildTo(stage)
+      .appStart(0);
   },
 });
 
@@ -51,10 +57,10 @@ phina.define('Square',{
 
   init: function(nodeSize, layoutId) {
     this.superInit();
-    this.renew(nodeSize, layoutId);
+    this.renew(nodeSize, layoutId, false);
   },
 
-  renew: function(nodeSize, layoutId) {
+  renew: function(nodeSize, layoutId, isLastTurn) {
     this.children.clear();
     this._nodeList = [];
     this._musicNoteList = [];
@@ -62,6 +68,22 @@ phina.define('Square',{
 
     //layoutList: {top:[5or7, ..], right:[], bottom:[], left:[]}
     let layoutList = this._calcLayoutList(layoutId);
+
+
+    let w = Layout().getHorizontalSideLength(layoutId) * this._nodeSize;
+    let h = Layout().getVerticalSideLength(layoutId) * this._nodeSize;
+    this.backgroundRect = RectangleShape({
+      width: w,
+      height: h,
+      padding: 0,
+      stroke: null,
+      fill: "#164a84"
+    })
+    .setOrigin(0, 0)
+    .setPosition(0, 0)
+    .addChildTo(this);
+    this.backgroundRect.alpha = 0.5;
+    //this.backgroundRect.visible = false;
 
 
     //超暫定
@@ -102,15 +124,15 @@ phina.define('Square',{
             height: h,
             padding: 0,
             stroke: null,
-            fill: "#3c3c3c"
+            fill: "#000"
           })
           .setOrigin(0, 0)
           .setPosition(w*x, h*y)
-          .addChildTo(this);
+          .addChildTo(this)
+          .alpha = 0.2;
         }
       }
     }
-
 
     Object.keys(layoutList).forEach(function(key){
       let p = this._calcSidePosition(key, layoutList);
@@ -228,10 +250,10 @@ phina.define('Square',{
   _createMusicalNote: function(blockSize) {
     switch(blockSize) {
       case 5:
-        return MusicalNote().getNoteFifth(this._nodeSize, this._nodeSize);
+        return DisplayElement();//MusicalNote().getNoteFifth(this._nodeSize, this._nodeSize);
         break;
       case 7:
-        return MusicalNote().getNoteSeventh(this._nodeSize, this._nodeSize);
+        return DisplayElement();//MusicalNote().getNoteSeventh(this._nodeSize, this._nodeSize);
         break;
     }
   },
@@ -241,7 +263,8 @@ phina.define('Square',{
     let node = DisplayElement();
     this._createLine().addChildTo(node);
     this._createDivision(isLastOfSide, isLastOfBlock).addChildTo(node);
-    node.nodeNum = this._createNumberLabel(index)
+    node.nodeNum = {};
+    this._createNumberLabel(index)
       .setPosition(0, this.LABEL_POS_Y)
       .addChildTo(node);
     node.isLastOfSide = isLastOfSide && isLastOfBlock;
@@ -277,6 +300,7 @@ phina.define('Square',{
         .addPath(this._nodeSize, -divSize/2)
         .addPath(this._nodeSize, divSize/2)
     }
+    return PathShape();
   },
 
   _createNumberLabel: function(index) {
@@ -300,7 +324,7 @@ phina.define('Square',{
   },
 
   highlight: function(nodeIndex) {
-    let HIGHLIGHT_COLOR = "#EEE"
+    /*let HIGHLIGHT_COLOR = "#EEE"
 
     this._nodeList[nodeIndex].nodeNum.fill = HIGHLIGHT_COLOR;
     if(nodeIndex != 0) {
@@ -321,6 +345,17 @@ phina.define('Square',{
           prevMusicNoteGroup.children[k].children[l].stroke = "#AAA";
         }
       }
+    }*/
+  },
+
+  switchBackgroundVisible: function() {
+    switch(this.backgroundRect.visible){
+      case true:
+        this.backgroundRect.visible = false;
+        break;
+      case false:
+        this.backgroundRect.visible = true;
+        break;
     }
   }
 });
@@ -328,12 +363,12 @@ phina.define('Square',{
 
 phina.define('Layout',{
   LIST: [
-    {short: [5], long: [7], dir: "PORTRAIT"},
-    {short: [7], long: [5, 5], dir: "LANDSCAPE"},
-    {short: [7, 5], long: [5, 7, 5], dir: "PORTRAIT"},
-    {short: [5, 7, 5], long: [7, 5, 7, 5], dir: "LANDSCAPE"},
-    {short: [5, 7, 5, 7, 5], long: [7, 5, 5, 7, 5, 7, 5], dir: "PORTRAIT"},
-    {short: [7, 5, 5, 7, 5, 7, 5], long: [5, 7, 5, 7, 5, 5, 7, 5, 7, 5], dir: "LANDSCAPE"}
+    {short: [5], long: [7], dir: "PORTRAIT", length: 12}, //12
+    {short: [7], long: [5, 5], dir: "LANDSCAPE", length: 9}, //9
+    {short: [7, 5], long: [5, 7, 5], dir: "PORTRAIT", length: 6}, //6
+    {short: [5, 7, 5], long: [7, 5, 7, 5], dir: "LANDSCAPE", length: 7}, //7
+    {short: [5, 7, 5, 7, 5], long: [7, 5, 5, 7, 5, 7, 5], dir: "PORTRAIT", length: 4}, //4
+    {short: [7, 5, 5, 7, 5, 7, 5], long: [5, 7, 5, 7, 5, 5, 7, 5, 7, 5], dir: "LANDSCAPE", length: 5} //5
   ],
 
   init: function() {
@@ -384,6 +419,10 @@ phina.define('Layout',{
       case "LANDSCAPE":
         return this.getShortSidelength(id);
     }
+  },
+
+  getTurnLength: function(id) {
+    return this.LIST[id].length;
   }
 });
 
@@ -513,10 +552,13 @@ phina.define('Ball',{
   moveDirCount: 0,
   moveNodeCount: 0,
   currentNode: 0,
+  turnLength: 0,
 
-  init: function(nodeSize, layoutId, square, labels) {
+  WAIT_COUNT: 4000, //4000
+
+  init: function(nodeSize, layoutId, square, labels, turnLengthLabel) {
     this.superInit({
-      radius: 5,
+      radius: 6,
       fill: "#333300",
       stroke: null
     });
@@ -525,6 +567,7 @@ phina.define('Ball',{
     this.layoutId = layoutId;
     this._square = square;
     this.labels = labels;
+    this.turnLengthLabel = turnLengthLabel;
   },
 
   setMoveSpeed: function(moveSpeed) {
@@ -532,7 +575,52 @@ phina.define('Ball',{
     return this;
   },
 
-  moveStart: function() {
+  appStart: function(moveDirCount) {
+    this.fill = "#CC0000";
+    let highlightTime = 200;
+    let waitCount = 1000 * 60 / (BPM / 4) - highlightTime;
+    this.tweener
+      .wait(this.WAIT_COUNT)
+      .call(function(){
+        this.fill = "#FFF";
+      }.bind(this))
+      .wait(highlightTime)
+      .call(function(){
+        this.fill = "#CC0000";
+      }.bind(this))
+      .wait(waitCount)
+      .call(function(){
+        this.fill = "#FFF";
+      }.bind(this))
+      .wait(highlightTime)
+      .call(function(){
+        this.fill = "#CC0000";
+      }.bind(this))
+      .wait(waitCount)
+      .call(function(){
+        this.fill = "#FFF";
+      }.bind(this))
+      .wait(highlightTime)
+      .call(function(){
+        this.fill = "#CC0000";
+      }.bind(this))
+      .wait(waitCount)
+      .call(function(){
+        this.fill = "#FFF";
+      }.bind(this))
+      .wait(highlightTime)
+      .call(function(){
+        this.fill = "#CC0000";
+      }.bind(this))
+      .wait(waitCount)
+      .call(function(){
+        this.moveStart(moveDirCount);
+      }.bind(this))
+  },
+
+  moveStart: function(moveDirCount) {
+    this.moveDirCount = moveDirCount;
+
     let squareNodeLength = this._square.getNodeLength();
     let nextX = this.x;
     let nextY = this.y;
@@ -544,13 +632,13 @@ phina.define('Ball',{
       case "UP": nextY -= this._nodeSize; break;
     }
 
-    let nodeIsFirstOfBlock = this._square.getNodeIsFirstOfBlock(this.currentNode);
+    let nodeIsFirstOfBlock = this._square.getNodeIsFirstOfBlock(this.moveNodeCount % squareNodeLength);
     if(nodeIsFirstOfBlock){
-      this.fill = "#FFFF00";
+      this.fill = "#FFF";
     } else {
-      this.fill = "#777700";
+      this.fill = "#CC0000";
     }
-    this._square.highlight(this.currentNode);
+    //this._square.highlight(this.currentNode);
 
     this._moveCore(nextX, nextY, dir, squareNodeLength);
   },
@@ -566,25 +654,121 @@ phina.define('Ball',{
         this._isPossibleGoStraight(squareNodeLength);
 
         if(this.currentNode == squareNodeLength - 1){
-          this.layoutId = Layout().getNextLayoutId(this.layoutId);
-          this._square.renew(this._nodeSize, this.layoutId);
-          this.labels.updateLabels(this.layoutId);
-          this.currentNode = 0;
-          this.moveNodeCount = 0;
-        } else {
-          this.moveNodeCount++;
-          this.currentNode = this.moveNodeCount % squareNodeLength;
+          this.turnLength++;
+          if(this.turnLength == Layout().getTurnLength(this.layoutId)){
+            this.turnLength = 0;
+            this.layoutId = Layout().getNextLayoutId(this.layoutId);
+            switch(Layout().getSquareDirection(this.layoutId)){
+              case "PORTRAIT":
+                this.moveDirCount = 0;
+                this.moveNodeCount = 0;
+                break;
+              case "LANDSCAPE":
+                this.moveDirCount = 1;
+                this.moveNodeCount = Layout().getLongSidelength(this.layoutId);
+                break;
+            }
+            this.currentNode = 0;
+            // wait callback start ---------
+            let highlightTime = 200;
+            let waitCount = 1000 * 60 / (BPM / 4) - highlightTime;
+            this.tweener
+              .wait(this.WAIT_COUNT)
+              .call(function(){
+                switch(Layout().getSquareDirection(this.layoutId)){
+                  case "PORTRAIT":
+                    this.x = 0;
+                    break;
+                  case "LANDSCAPE":
+                    this.x = this._nodeSize * Layout().getLongSidelength(this.layoutId);
+                    break;
+                }
+                this._square.renew(this._nodeSize, this.layoutId);
+                this.labels.updateLabels(this.layoutId);
+                this.turnLengthLabel.updateLabels(this.layoutId, this.turnLength + 1, this._nodeSize);
+              }.bind(this))
+              .wait(this.WAIT_COUNT)
+
+
+              .call(function(){
+                this.fill = "#FFF";
+              }.bind(this))
+              .wait(highlightTime)
+              .call(function(){
+                this.fill = "#CC0000";
+              }.bind(this))
+              .wait(waitCount)
+              .call(function(){
+                this.fill = "#FFF";
+              }.bind(this))
+              .wait(highlightTime)
+              .call(function(){
+                this.fill = "#CC0000";
+              }.bind(this))
+              .wait(waitCount)
+              .call(function(){
+                this.fill = "#FFF";
+              }.bind(this))
+              .wait(highlightTime)
+              .call(function(){
+                this.fill = "#CC0000";
+              }.bind(this))
+              .wait(waitCount)
+              .call(function(){
+                this.fill = "#FFF";
+              }.bind(this))
+              .wait(highlightTime)
+              .call(function(){
+                this.fill = "#CC0000";
+              }.bind(this))
+              .wait(waitCount)
+              .call(function(){
+                this.moveStart(this.moveDirCount);
+              }.bind(this))
+            // wait callback end ---------
+          }
+          else {
+            this.labels.updateLabels(this.layoutId);
+            this.turnLengthLabel.updateLabels(this.layoutId, this.turnLength + 1, this._nodeSize);
+            switch(Layout().getSquareDirection(this.layoutId)){
+              case "PORTRAIT":
+                this.moveDirCount = 0;
+                this.moveNodeCount = 0;
+                this.x = 0;
+                break;
+              case "LANDSCAPE":
+                this.moveDirCount = 1;
+                this.moveNodeCount = Layout().getLongSidelength(this.layoutId);
+                this.x = this._nodeSize * Layout().getLongSidelength(this.layoutId);
+                break;
+            }
+            this.currentNode = 0;
+
+            if(this.turnLength == Layout().getTurnLength(this.layoutId) - 1) {
+              this._square.switchBackgroundVisible();
+            }
+
+            this.moveStart(this.moveDirCount);
+          }
         }
-        this.moveStart();
+        else {
+          this.moveNodeCount++;
+          this.currentNode++;
+          this.moveStart(this.moveDirCount);
+        }
       }.bind(this));
   },
 
   _isPossibleGoStraight: function(squareNodeLength) {
-    if(this._square.getIsLastOfSide(this.currentNode)) this._turn();
+    if(this._square.getIsLastOfSide(this.moveNodeCount % squareNodeLength)) this._turn();
   },
 
   _turn: function(){
     this.moveDirCount += 1;
+
+    if(this.turnLength == Layout().getTurnLength(this.layoutId) - 1) {
+      this._square.switchBackgroundVisible();
+    }
   }
 });
 
@@ -594,6 +778,7 @@ phina.define('Labels',{
 
   init: function(layoutId) {
     this.superInit();
+    let grayColor = "#DDD";
 
     this.mainLabel = Label({
       fontSize: 45,
@@ -604,21 +789,21 @@ phina.define('Labels',{
 
     this.ratioLabel = Label({
       fontSize: 18,
-      fill: "#AAA"
+      fill: grayColor
     })
     .setPosition(0, -65) //暫定位置
     .addChildTo(this);
 
     this.sqrtLabel = Label({
       fontSize: 18,
-      fill: "#AAA"
+      fill: grayColor
     })
     .setPosition(0, -20) //暫定位置
     .addChildTo(this);
 
     this.diffLabel = Label({
       fontSize: 18,
-      fill: "#AAA"
+      fill: grayColor
     })
     .setPosition(0, 12) //暫定位置
     .addChildTo(this);
@@ -633,6 +818,32 @@ phina.define('Labels',{
     this.ratioLabel.text = "1 : " + longSideSum / shortSideSum;
     this.sqrtLabel.text = "√2 = " + Math.sqrt(2);
     this.diffLabel.text = "diff = " + Math.abs(Math.sqrt(2) - longSideSum / shortSideSum);
+  },
+});
+
+
+phina.define('TurnLengthLabel',{
+  superClass: 'DisplayElement',
+
+  init: function(nodeSize, layoutId) {
+    this.superInit();
+
+    this.turnLengthLabel = Label({
+      fontSize: 20,
+      fill: "#FFF",
+      text: "1"
+    })
+    .addChildTo(this);
+
+    this.updateLabels(layoutId, this.turnLengthLabel.text, nodeSize);
+  },
+
+  updateLabels: function(layoutId, turnLength, nodeSize) {
+    this.turnLengthLabel.text = turnLength;
+    this.turnLengthLabel.setPosition(
+      Layout().getHorizontalSideLength(layoutId) * nodeSize / 2,
+      Layout().getVerticalSideLength(layoutId) * nodeSize / 2
+    )
   },
 });
 
