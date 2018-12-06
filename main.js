@@ -7,8 +7,8 @@
 //
 phina.globalize();
 
-SCREEN_WIDTH = 960;
-SCREEN_HEIGHT = 920;
+SCREEN_WIDTH = 1024;
+SCREEN_HEIGHT = 768;
 BACKGROUND_COLOR = "#333";
 BPM = 390; //16note
 
@@ -24,7 +24,7 @@ phina.define('MainScene',{
     this.superInit(option);
     this.backgroundColor = BACKGROUND_COLOR;
     let marginLeft = (SCREEN_WIDTH - (Layout().getLongSidelength(Layout().getListLength() - 1) * this.NODE_SIZE)) / 2;
-    let marginTop = (SCREEN_WIDTH - (Layout().getLongSidelength(Layout().getListLength() - 1) * this.NODE_SIZE)) / 2;
+    let marginTop = 55;
 
     let stage = DisplayElement()
       .setOrigin(0, 0)
@@ -32,7 +32,7 @@ phina.define('MainScene',{
       .addChildTo(this);
 
     this.labels = Labels(this.LAYOUT_ID)
-      .setPosition(SCREEN_WIDTH/2, SCREEN_HEIGHT-60)
+      .setPosition(SCREEN_WIDTH/2, SCREEN_HEIGHT)
       .addChildTo(this);
     this.square = Square(this.NODE_SIZE, this.LAYOUT_ID)
       .addChildTo(stage);
@@ -793,28 +793,28 @@ phina.define('Labels',{
       fontSize: 45,
       fill: "#FFF"
     })
-    .setPosition(0, -113) //暫定位置
+    .setPosition(0, -60) //暫定位置
     .addChildTo(this);
 
     this.ratioLabel = Label({
       fontSize: 18,
       fill: grayColor
     })
-    .setPosition(0, -65) //暫定位置
+    .setPosition(0, -25) //暫定位置
     .addChildTo(this);
 
     this.sqrtLabel = Label({
       fontSize: 18,
       fill: grayColor
     })
-    .setPosition(0, -20) //暫定位置
+    .setPosition(370, -52) //暫定位置
     .addChildTo(this);
 
     this.diffLabel = Label({
       fontSize: 18,
       fill: grayColor
     })
-    .setPosition(0, 12) //暫定位置
+    .setPosition(355, -25) //暫定位置
     .addChildTo(this);
 
     this.updateLabels(layoutId);
