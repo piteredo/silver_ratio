@@ -10,7 +10,7 @@ phina.globalize();
 SCREEN_WIDTH = 1024;
 SCREEN_HEIGHT = 768;
 BACKGROUND_COLOR = "#333";
-BPM = 390; //16note
+BPM = 446; //16note
 
 
 phina.define('MainScene',{
@@ -371,12 +371,12 @@ phina.define('Square',{
 
 phina.define('Layout',{
   LIST: [
-    {short: [5], long: [7], dir: "PORTRAIT", length: 12}, //12
-    {short: [7], long: [5, 5], dir: "LANDSCAPE", length: 9}, //9
-    {short: [7, 5], long: [5, 7, 5], dir: "PORTRAIT", length: 6}, //6
-    {short: [5, 7, 5], long: [7, 5, 7, 5], dir: "LANDSCAPE", length: 7}, //7
-    {short: [5, 7, 5, 7, 5], long: [7, 5, 5, 7, 5, 7, 5], dir: "PORTRAIT", length: 4}, //4
-    {short: [7, 5, 5, 7, 5, 7, 5], long: [5, 7, 5, 7, 5, 5, 7, 5, 7, 5], dir: "LANDSCAPE", length: 5} //5
+    {short: [5], long: [7], dir: "PORTRAIT", length: 2}, //12
+    {short: [7], long: [5, 5], dir: "LANDSCAPE", length: 2}, //9
+    {short: [7, 5], long: [5, 7, 5], dir: "PORTRAIT", length: 2}, //6
+    {short: [5, 7, 5], long: [7, 5, 7, 5], dir: "LANDSCAPE", length: 2}, //7
+    {short: [5, 7, 5, 7, 5], long: [7, 5, 5, 7, 5, 7, 5], dir: "PORTRAIT", length: 2}, //4
+    {short: [7, 5, 5, 7, 5, 7, 5], long: [5, 7, 5, 7, 5, 5, 7, 5, 7, 5], dir: "LANDSCAPE", length: 2} //5
   ],
 
   init: function() {
@@ -586,7 +586,7 @@ phina.define('Ball',{
   appStart: function(moveDirCount) {
     this.fill = "#CC0000";
     let highlightTime = 200;
-    let waitCount = 1000 * 60 / (BPM / 4) - highlightTime;
+    let waitCount = 1000 * 60 / (BPM / 4)- 120;
     this.tweener
       .wait(this.WAIT_COUNT)
       .call(function(){
@@ -680,7 +680,7 @@ phina.define('Ball',{
             this.currentNode = 0;
             // wait callback start ---------
             let highlightTime = 200;
-            let waitCount = 1000 * 60 / (BPM / 4) - highlightTime;
+            let waitCount = 1000 * 60 / (BPM / 4) - 120;
             this.tweener
               .wait(this.WAIT_COUNT)
               .call(function(){
