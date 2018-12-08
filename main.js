@@ -588,7 +588,7 @@ phina.define('Ball',{
     let highlightTime = 200;
     let waitCount = 1000 * 60 / (BPM / 4)- 120;
     this.tweener
-      .wait(this.WAIT_COUNT)
+      //.wait(this.WAIT_COUNT)
       .call(function(){
         this.fill = "#FFF";
       }.bind(this))
