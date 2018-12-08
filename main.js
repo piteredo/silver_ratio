@@ -696,7 +696,7 @@ phina.define('Ball',{
                 this.labels.updateLabels(this.layoutId);
                 this.turnLengthLabel.updateLabels(this.layoutId, this.turnLength + 1, this._nodeSize);
               }.bind(this))
-              .wait(this.WAIT_COUNT)
+              //.wait(this.WAIT_COUNT)
 
 
               .call(function(){
