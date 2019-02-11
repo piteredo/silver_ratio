@@ -10,7 +10,6 @@ phina.globalize();
 SCREEN_WIDTH = 1024;
 SCREEN_HEIGHT = 768;
 BACKGROUND_COLOR = "#333";
-BPM = 446; //16note
 
 
 phina.define('MainScene',{
@@ -18,7 +17,7 @@ phina.define('MainScene',{
 
   NODE_SIZE: 14,
   LAYOUT_ID: 0,
-  MOVE_SPEED: 1000 * 60 / BPM,
+  //MOVE_SPEED: 1000 * (60 / BPM),
 
   init: function(option) {
     this.superInit(option);
@@ -39,7 +38,7 @@ phina.define('MainScene',{
     this.turnLengthLabel = TurnLengthLabel(this.NODE_SIZE, this.LAYOUT_ID)
       .addChildTo(stage);
     this.ball = Ball(this.NODE_SIZE, this.LAYOUT_ID, this.square, this.labels, this.turnLengthLabel)
-      .setMoveSpeed(this.MOVE_SPEED)
+      .setMoveSpeed()
       .addChildTo(stage)
       .appStart(0);
   },
@@ -371,12 +370,12 @@ phina.define('Square',{
 
 phina.define('Layout',{
   LIST: [
-    {short: [5], long: [7], dir: "PORTRAIT", length: 2}, //12
-    {short: [7], long: [5, 5], dir: "LANDSCAPE", length: 2}, //9
-    {short: [7, 5], long: [5, 7, 5], dir: "PORTRAIT", length: 2}, //6
-    {short: [5, 7, 5], long: [7, 5, 7, 5], dir: "LANDSCAPE", length: 2}, //7
-    {short: [5, 7, 5, 7, 5], long: [7, 5, 5, 7, 5, 7, 5], dir: "PORTRAIT", length: 2}, //4
-    {short: [7, 5, 5, 7, 5, 7, 5], long: [5, 7, 5, 7, 5, 5, 7, 5, 7, 5], dir: "LANDSCAPE", length: 2} //5
+    {short: [5], long: [7], dir: "PORTRAIT", length: 12, bpm: 390+56}, //12
+    {short: [7], long: [5, 5], dir: "LANDSCAPE", length: 9, bpm: 390+56}, //9
+    {short: [7, 5], long: [5, 7, 5], dir: "PORTRAIT", length: 6, bpm: 410+56}, //6
+    {short: [5, 7, 5], long: [7, 5, 7, 5], dir: "LANDSCAPE", length: 7, bpm: 410+56}, //7
+    {short: [5, 7, 5, 7, 5], long: [7, 5, 5, 7, 5, 7, 5], dir: "PORTRAIT", length: 4, bpm: 440+56}, //4
+    {short: [7, 5, 5, 7, 5, 7, 5], long: [5, 7, 5, 7, 5, 5, 7, 5, 7, 5], dir: "LANDSCAPE", length: 5, bpm: 440+56} //5
   ],
 
   init: function() {
@@ -431,6 +430,10 @@ phina.define('Layout',{
 
   getTurnLength: function(id) {
     return this.LIST[id].length;
+  },
+
+  getBpm: function(id) {
+    return this.LIST[id].bpm;
   }
 });
 
@@ -578,17 +581,17 @@ phina.define('Ball',{
     this.turnLengthLabel = turnLengthLabel;
   },
 
-  setMoveSpeed: function(moveSpeed) {
-    this.moveSpeed = moveSpeed;
+  setMoveSpeed: function() {
+    this.moveSpeed = 1000 * (60 / Layout().getBpm(0));
     return this;
   },
 
   appStart: function(moveDirCount) {
     this.fill = "#CC0000";
     let highlightTime = 200;
-    let waitCount = 1000 * 60 / (BPM / 4)- 120;
+    let waitCount = 1000 * 60 / (Layout().getBpm(0) / 4)- 120;
     this.tweener
-      //.wait(this.WAIT_COUNT)
+      .wait(this.WAIT_COUNT)
       .call(function(){
         this.fill = "#FFF";
       }.bind(this))
@@ -653,6 +656,7 @@ phina.define('Ball',{
   },
 
   _moveCore: function(nextX, nextY, dir, squareNodeLength) {
+    this.moveSpeed = 1000 * (60 / Layout().getBpm(this.layoutId));
     this.tweener
       .to({
         x: nextX,
@@ -680,9 +684,9 @@ phina.define('Ball',{
             this.currentNode = 0;
             // wait callback start ---------
             let highlightTime = 200;
-            let waitCount = 1000 * 60 / (BPM / 4) - 120;
+            let waitCount = 1000 * 60 / (Layout().getBpm(this.layoutId) / 4) - 120;
             this.tweener
-              //.wait(this.WAIT_COUNT)
+              .wait(this.WAIT_COUNT)
               .call(function(){
                 switch(Layout().getSquareDirection(this.layoutId)){
                   case "PORTRAIT":
@@ -696,7 +700,7 @@ phina.define('Ball',{
                 this.labels.updateLabels(this.layoutId);
                 this.turnLengthLabel.updateLabels(this.layoutId, this.turnLength + 1, this._nodeSize);
               }.bind(this))
-              //.wait(this.WAIT_COUNT)
+              .wait(this.WAIT_COUNT)
 
 
               .call(function(){
